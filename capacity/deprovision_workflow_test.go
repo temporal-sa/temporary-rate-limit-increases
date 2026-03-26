@@ -15,9 +15,9 @@ func Test_DeprovisionTRUWorkflow(t *testing.T) {
 	var a *Activities
 	env.OnActivity(a.RemoveTRUs, mock.Anything, mock.Anything).Return(nil)
 
-	input := ProvisionInput{
-		Namespace: "test-namespace",
-		APSLimit:  2000,
+	input := DeprovisionTRUInput{
+		Namespace:          "test-namespace",
+		MinutesToProvision: 5,
 	}
 
 	env.ExecuteWorkflow(DeprovisionTRUWorkflow, input)

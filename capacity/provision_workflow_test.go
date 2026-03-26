@@ -17,9 +17,10 @@ func Test_ProvisionTRUWorkflow(t *testing.T) {
 	var a *Activities
 	env.OnActivity(a.AddTRUs, mock.Anything, mock.Anything).Return(nil)
 
-	input := ProvisionInput{
-		Namespace: "test-namespace",
-		APSLimit:  2000,
+	input := ProvisionTRUInput{
+		Namespace:          "test-namespace",
+		APSLimit:           2000,
+		MinutesToProvision: 5,
 	}
 
 	env.ExecuteWorkflow(ProvisionTRUWorkflow, input)

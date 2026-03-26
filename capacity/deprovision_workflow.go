@@ -1,6 +1,7 @@
 package capacity
 
 import (
+	"go.temporal.io/sdk/temporal"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -9,14 +10,17 @@ import (
 // DeprovisionTRUWorkflow sleeps for the TTL duration then reverts the namespace
 // to on-demand capacity. It is started as an asynchronous Child Workflow by
 // ProvisionTRUWorkflow and runs independently after the parent completes.
-func DeprovisionTRUWorkflow(ctx workflow.Context, input ProvisionInput) error {
-	err := workflow.Sleep(ctx, 5*time.Minute)
+func DeprovisionTRUWorkflow(ctx workflow.Context, input DeprovisionTRUInput) error {
+	err := workflow.Sleep(ctx, time.Duration(input.MinutesToProvision)*time.Minute)
 	if err != nil {
 		return err
 	}
 
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: 2 * time.Minute,
+		RetryPolicy: &temporal.RetryPolicy{
+			NonRetryableErrorTypes: []string{unauthorized, forbidden},
+		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
