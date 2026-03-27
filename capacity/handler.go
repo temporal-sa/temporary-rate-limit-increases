@@ -3,7 +3,6 @@ package capacity
 import (
 	"context"
 	"fmt"
-
 	"go.temporal.io/sdk/client"
 )
 
@@ -18,9 +17,10 @@ func HandleProvisionRequest(c client.Client, namespace string, apsLimit int32) e
 		TaskQueue: TaskQueue,
 	}
 
-	input := ProvisionInput{
-		Namespace: namespace,
-		APSLimit:  apsLimit,
+	input := ProvisionTRUInput{
+		Namespace:          namespace,
+		APSLimit:           apsLimit,
+		MinutesToProvision: 5,
 	}
 
 	we, err := c.ExecuteWorkflow(context.Background(), options, ProvisionTRUWorkflow, input)

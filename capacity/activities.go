@@ -5,19 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go.temporal.io/sdk/temporal"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 const (
 	defaultBaseURL = "https://saas-api.tmprl.cloud"
 )
-
-// ProvisionInput holds the parameters for a capacity provisioning request.
-type ProvisionInput struct {
-	Namespace string
-	APSLimit  int32
-}
 
 // Activities holds the dependencies required by the provisioning activities.
 type Activities struct {
@@ -71,9 +67,10 @@ func (a *Activities) getNamespace(ctx context.Context, namespace string) (json.R
 		return nil, "", err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("unexpected status %d: %s", resp.StatusCode, body)
+		body, _ := io.ReadAll(resp.Body)
+		msg := fmt.Sprintf("%s", body)
+		return nil, "", temporal.NewApplicationError(msg, strconv.Itoa(resp.StatusCode))
 	}
-
 	var result getNamespaceResponse
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, "", err
@@ -107,13 +104,14 @@ func (a *Activities) updateNamespace(ctx context.Context, namespace string, spec
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, body)
+		msg := fmt.Sprintf("%s", body)
+		return temporal.NewApplicationError(msg, strconv.Itoa(resp.StatusCode))
 	}
 	return nil
 }
 
 // AddTRUs increases the provisioned capacity of the target namespace to the requested APS limit.
-func (a *Activities) AddTRUs(ctx context.Context, input ProvisionInput) error {
+func (a *Activities) AddTRUs(ctx context.Context, input AddTRUInput) error {
 	spec, resourceVersion, err := a.getNamespace(ctx, input.Namespace)
 	if err != nil {
 		return fmt.Errorf("get namespace %q: %w", input.Namespace, err)
@@ -136,16 +134,16 @@ func (a *Activities) AddTRUs(ctx context.Context, input ProvisionInput) error {
 	}
 
 	if err := a.updateNamespace(ctx, input.Namespace, updatedSpec, resourceVersion); err != nil {
-		return fmt.Errorf("update namespace %q to %d APS: %w", input.Namespace, input.APSLimit, err)
+		return err
 	}
 	return nil
 }
 
 // RemoveTRUs reverts the target namespace to on-demand capacity mode.
-func (a *Activities) RemoveTRUs(ctx context.Context, input ProvisionInput) error {
+func (a *Activities) RemoveTRUs(ctx context.Context, input RemoveTRUInput) error {
 	spec, resourceVersion, err := a.getNamespace(ctx, input.Namespace)
 	if err != nil {
-		return fmt.Errorf("get namespace %q: %w", input.Namespace, err)
+		return err
 	}
 
 	var specMap map[string]interface{}
@@ -162,7 +160,7 @@ func (a *Activities) RemoveTRUs(ctx context.Context, input ProvisionInput) error
 	}
 
 	if err := a.updateNamespace(ctx, input.Namespace, updatedSpec, resourceVersion); err != nil {
-		return fmt.Errorf("revert namespace %q to on-demand: %w", input.Namespace, err)
+		return err
 	}
 	return nil
 }
