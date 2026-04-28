@@ -19,7 +19,7 @@ func DeprovisionTRUWorkflow(ctx workflow.Context, input DeprovisionTRUInput) err
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: 2 * time.Minute,
 		RetryPolicy: &temporal.RetryPolicy{
-			NonRetryableErrorTypes: []string{unauthorized, forbidden},
+			NonRetryableErrorTypes: []string{unauthorized, forbidden, badRequest},
 		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)

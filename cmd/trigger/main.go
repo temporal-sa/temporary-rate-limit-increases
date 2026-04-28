@@ -5,6 +5,7 @@ import (
 	"go.temporal.io/sdk/client"
 	"log"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -15,10 +16,21 @@ func main() {
 	defer c.Close()
 
 	targetNamespace := os.Getenv("TEMPORAL_CLOUD_NAMESPACE")
+	if targetNamespace == "" {
+		log.Fatalln("TEMPORAL_CLOUD_NAMESPACE missing and required")
+	}
+	minutesToProvisionRaw := os.Getenv("MINUTES_TO_PROVISION")
+	if minutesToProvisionRaw == "" {
+		log.Fatalln("MINUTES_TO_PROVISION missing and required")
+	}
+	minutesToProvision, err := strconv.Atoi(minutesToProvisionRaw)
+	if err != nil {
+		log.Fatalln("Unable to parse MINUTES_TO_PROVISION: " + err.Error())
+	}
 	var newLimit int32 = 1000
 
-	err = capacity.HandleProvisionRequest(c, targetNamespace, newLimit)
+	err = capacity.HandleProvisionRequest(c, targetNamespace, newLimit, int32(minutesToProvision))
 	if err != nil {
-		log.Fatalln("Failed to execute provision request", err)
+		log.Fatalln("Unable to execute provision request", err)
 	}
 }

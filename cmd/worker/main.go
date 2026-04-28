@@ -11,7 +11,7 @@ import (
 func main() {
 	apiKey := os.Getenv("TEMPORAL_CLOUD_API_KEY")
 	if apiKey == "" {
-		log.Fatalln("TEMPORAL_CLOUD_API_KEY environment variable is required")
+		log.Fatalln("TEMPORAL_CLOUD_API_KEY missing and required")
 	}
 
 	c, err := client.Dial(client.Options{})

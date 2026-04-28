@@ -1,7 +1,6 @@
 package capacity
 
 import (
-	"fmt"
 	"go.temporal.io/sdk/temporal"
 	"net/http"
 	"strconv"
@@ -14,6 +13,7 @@ import (
 var (
 	unauthorized = strconv.Itoa(http.StatusUnauthorized)
 	forbidden    = strconv.Itoa(http.StatusForbidden)
+	badRequest   = strconv.Itoa(http.StatusBadRequest)
 )
 
 // ProvisionTRUWorkflow raises the namespace capacity limit, then starts the
@@ -23,7 +23,7 @@ func ProvisionTRUWorkflow(ctx workflow.Context, input ProvisionTRUInput) error {
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: 2 * time.Minute,
 		RetryPolicy: &temporal.RetryPolicy{
-			NonRetryableErrorTypes: []string{unauthorized, forbidden},
+			NonRetryableErrorTypes: []string{unauthorized, forbidden, badRequest},
 		},
 	}
 	actCtx := workflow.WithActivityOptions(ctx, ao)
@@ -38,7 +38,7 @@ func ProvisionTRUWorkflow(ctx workflow.Context, input ProvisionTRUInput) error {
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
-		WorkflowID:        fmt.Sprintf("deprovision-%s", input.Namespace),
+		WorkflowID:        generateDeprovisioningId(input.Namespace),
 		ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 	}
 	childCtx := workflow.WithChildOptions(ctx, cwo)
