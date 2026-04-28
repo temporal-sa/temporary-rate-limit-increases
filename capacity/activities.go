@@ -67,7 +67,6 @@ func (a *Activities) getNamespace(ctx context.Context, namespace string) (json.R
 		return nil, "", err
 	}
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
 		msg := fmt.Sprintf("%s", body)
 		return nil, "", temporal.NewApplicationError(msg, strconv.Itoa(resp.StatusCode))
 	}
